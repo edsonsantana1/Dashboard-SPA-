@@ -133,17 +133,22 @@ async function inicializarGraficoModelo() {
     try {
         const res = await fetch("http://localhost:5000/api/modelo/coefficients");
         const data = await res.json();
+
         const processedData = {};
         Object.keys(data).forEach(key => {
             processedData[key] = Number(data[key]);
         });
+
         const sortedEntries = Object.entries(processedData)
             .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+
         const labels = sortedEntries.map(([key]) => key);
         const valores = sortedEntries.map(([, value]) => value);
+
         const ctx = document.createElement('canvas');
         document.getElementById("graficoModelo").innerHTML = "";
         document.getElementById("graficoModelo").appendChild(ctx);
+        
         if (graficoModelo) graficoModelo.destroy();
         graficoModelo = new Chart(ctx, {
             type: 'bar',
