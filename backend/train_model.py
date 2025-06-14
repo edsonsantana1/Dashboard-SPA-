@@ -7,10 +7,12 @@ from sklearn.pipeline import Pipeline
 import pickle
 
 # 1. Conectar no MongoDB e puxar dados
-client = MongoClient("mongodb://localhost:27017/")
+client = MongoClient(
+    "mongodb+srv://datascience2025teste:516ZRabl1fHOyzAC@datascience.jyfalwg.mongodb.net/?retryWrites=true&w=majority&appName=datascience")
 db = client["meu_banco"]
 colecao = db["meus_dados"]
-dados = list(colecao.find({}, {'_id': 0}))
+
+dados = list(colecao.find({}, {"_id": 0}))
 
 # 2. Preparar DataFrame flat
 lista = []
@@ -23,6 +25,7 @@ for d in dados:
     })
 
 df = pd.DataFrame(lista)
+
 
 # 3. Variáveis explicativas e alvo
 X = df[["idade", "etnia", "localizacao"]]

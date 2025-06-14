@@ -131,7 +131,7 @@ function atualizarGraficoDistribuicao(dadosFiltrados) {
 
 async function inicializarGraficoModelo() {
     try {
-        const res = await fetch("http://localhost:5000/api/modelo/coefficients");
+        const res = await fetch("http://localhost:5000/api/modelo/coeficientes");
         const data = await res.json();
 
         const processedData = {};

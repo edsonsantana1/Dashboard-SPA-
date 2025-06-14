@@ -26,17 +26,14 @@
             color: #40516c;
         }
         .container {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
             gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
             margin-bottom: 20px;
         }
         .grafico-box {
-            flex: 1 1 400px;
-            max-width: 45vw;
             background: white;
-            padding: 15px;
+            padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
@@ -44,6 +41,11 @@
             text-align: center;
             color: #40516c;
             margin-bottom: 30px;
+        }
+        h2, h3 {
+            text-align: center;
+            color: #40516c;
+            margin-bottom: 15px;
         }
         select, input[type="date"] {
             padding: 8px 12px;
@@ -62,29 +64,27 @@
         <input type="date" id="dataInicio" />
         <label for="dataFim">até:</label>
         <input type="date" id="dataFim" />
+        <label for="variavelRosca">Variável:</label>
+        <select id="variavelRosca">
+            <option value="tipo_do_caso">Tipo do Caso</option>
+            <option value="localizacao">Localização</option>
+            <option value="vitima.etnia">Etnia da Vítima</option>
+        </select>
     </div>
 
     <div class="container">
         <div class="grafico-box rosca">
-            <div class="rosca-controls">
-                <label for="variavelRosca">Variável:</label>
-                <select id="variavelRosca">
-                    <option value="tipo_do_caso">Tipo do Caso</option>
-                    <option value="localizacao">Localização</option>
-                    <option value="vitima.etnia">Etnia da Vítima</option>
-                </select>
-            </div>
+            <h2>Tipo do caso</h2>
             <div id="graficoRosca"></div>
         </div>
         <div class="grafico-box">
             <h2>Distribuição de Idades</h2>
             <div id="graficoDistribuicao"></div>
         </div>
-    </div>
-
-    <div id="containerGraficoModelo">
-        <h3>Fatores Determinantes nos Tipos de Caso</h3>
-        <div id="graficoModelo"></div>
+        <div class="grafico-box">
+            <h2>Fatores Determinantes nos Tipos de Caso</h2>
+            <div id="graficoModelo"></div>
+        </div>
     </div>
 
     <script src="script.js"></script>

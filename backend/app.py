@@ -1,17 +1,18 @@
 from flask import Flask, jsonify, request, abort
 from flask_cors import CORS
 from pymongo import MongoClient
+from datetime import datetime, timedelta
 from dataclasses import dataclass, asdict
 import random
-from datetime import datetime, timedelta
 import pickle
 import pandas as pd
+import numpy as np
 
 app = Flask(__name__)
 CORS(app)
 
 # MongoDB Connection
-MONGO_URI = "mongodb://localhost:27017/"
+MONGO_URI = "mongodb+srv://datascience2025teste:516ZRabl1fHOyzAC@datascience.jyfalwg.mongodb.net/?retryWrites=true&w=majority&appName=datascience"
 client = MongoClient(MONGO_URI)
 db = client["meu_banco"]
 colecao = db["meus_dados"]
@@ -36,12 +37,23 @@ class Caso:
             "vitima": asdict(self.vitima)
         }
 
+def validar_caso_json(data):
+    try:
+        vitima = data["vitima"]
+        assert isinstance(vitima, dict)
+        assert all(k in vitima for k in ("etnia", "idade"))
+        datetime.fromisoformat(data["data_do_caso"])
+        assert isinstance(data["tipo_do_caso"], str)
+        assert isinstance(data["localizacao"], str)
+    except:
+        return False
+    return True
+
 def gerar_dados_aleatorios(n=20):
-    tipos_casos = ["Furto", "Assalto", "Violencia doméstica", "Tráfico"]
+    tipos_casos = ["Furto", "Assalto", "Violência doméstica", "Tráfico"]
     locais = ["Centro", "Bairro A", "Bairro B", "Zona Rural"]
     etnias = ["Branca", "Preta", "Parda", "Indígena", "Amarela"]
     casos = []
-
     base_date = datetime.now()
     for i in range(n):
         data_caso = (base_date - timedelta(days=random.randint(0, 365))).date().isoformat()
@@ -57,30 +69,10 @@ def gerar_dados_aleatorios(n=20):
         casos.append(caso.to_dict())
     return casos
 
-def validar_caso_json(data):
-    try:
-        vitima = data["vitima"]
-        assert isinstance(vitima, dict)
-        assert all(k in vitima for k in ("etnia", "idade"))
-        datetime.fromisoformat(data["data_do_caso"])
-        assert isinstance(data["tipo_do_caso"], str)
-        assert isinstance(data["localizacao"], str)
-    except:
-        return False
-    return True
-
-if __name__ == "__main__":
-    if colecao.count_documents({}) == 0:
-        print("Inserindo dados iniciais...")
-        dados_iniciais = gerar_dados_aleatorios(20)
-        colecao.insert_many(dados_iniciais)
-    app.run(debug=True)
-
-
 @app.route('/api/casos', methods=['GET'])
 def listar_casos():
-    documents = list(colecao.find({}, {"_id": 0}))
-    return jsonify(documents), 200
+    documentos = list(colecao.find({}, {"_id": 0}))
+    return jsonify(documentos), 200
 
 @app.route('/api/casos', methods=['POST'])
 def criar_caso():
@@ -99,20 +91,14 @@ def buscar_caso(data_caso):
 
 @app.route('/api/casos/<string:data_caso>', methods=['DELETE'])
 def deletar_caso(data_caso):
-    result = colecao.delete_one({"data_do_caso": data_caso})
-    if result.deleted_count == 0:
+    resultado = colecao.delete_one({"data_do_caso": data_caso})
+    if resultado.deleted_count == 0:
         abort(404, "Caso não encontrado.")
-    return jsonify({"message": "Caso deletado com sucesso"}), 200
-
-# Carrega pipeline + label encoder salvos
-with open("model.pkl", "rb") as f:
-    data = pickle.load(f)
-    modelo = data["pipeline"]
-    label_encoder = data["label_encoder"]
+    return jsonify({"message": "Caso deletado"}), 200
 
 @app.route('/api/associacoes', methods=['GET'])
 def associacoes():
-    documentos = list(colecao.find({}, {'_id': 0}))
+    documentos = list(colecao.find({}, {"_id": 0}))
     if not documentos:
         return jsonify({"message": "Sem dados na coleção"}), 400
     lista = []
@@ -132,11 +118,18 @@ def associacoes():
     except Exception as e:
         return jsonify({"error": f"Erro ao processar modelo: {str(e)}"}), 500
 
+# Carrega pipeline + label encoder salvos
+with open("model.pkl", "rb") as f:
+    data = pickle.load(f)
+    modelo = data["pipeline"]
+    label_encoder = data["label_encoder"]
+
+# Endpoint para predição
 @app.route('/api/predizer', methods=['POST'])
 def predizer():
     dados = request.get_json()
     if not dados or not all(k in dados for k in ("idade", "etnia", "localizacao")):
-        return jsonify({"error": "JSON inválido. Esperado: idade, etnia, localizacao"}), 400
+        return jsonify({"erro": "JSON inválido. Esperado: idade, etnia, localizacao"}), 400
     try:
         df = pd.DataFrame([dados])
         y_prob = modelo.predict_proba(df)[0]
@@ -149,15 +142,17 @@ def predizer():
         }
         return jsonify(resultado), 200
     except Exception as e:
-        return jsonify({"error": f"Erro ao fazer predição: {str(e)}"}), 500
+        return jsonify({"erro": f"Erro ao fazer predição: {str(e)}"}), 500
 
-@app.route('/api/modelo/coefficients', methods=['GET'])
-def coefficients_modelo():
+# Novo endpoint para pegar coeficientes (feature importances)
+@app.route('/api/modelo/coeficientes', methods=['GET'])
+def coeficientes_modelo():
     try:
         # Pegando o pré-processador e o classificador XGBoost do pipeline
         preprocessor = modelo.named_steps['preprocessor']
         classifier = modelo.named_steps['classifier']
-        # Pegando nomes das features após o oneHotEncoding
+
+        # Pegando nomes das features após o OneHotEncoding
         cat_encoder = preprocessor.named_transformers_['cat']
         cat_features = cat_encoder.get_feature_names_out(preprocessor.transformers_[0][2])
         numeric_features = preprocessor.transformers_[1][2]
@@ -166,10 +161,25 @@ def coefficients_modelo():
         # Pegando as importâncias de feature do XGBoost
         importancias = classifier.feature_importances_
 
+        # Converter numpy.float32 para float nativo do Python
         features_importances = {
-            feature: float(importance)
+            feature: float(importance)  # Conversão crucial aqui
             for feature, importance in zip(all_features, importancias)
         }
+
+        print("Features importances a serem enviadas:", features_importances)
         return jsonify(features_importances), 200
     except Exception as e:
+        print("ERRO:", str(e))
         return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    if colecao.count_documents({}) == 0:
+        print("Coleção vazia, inserindo dados aleatórios iniciais...")
+        dados_iniciais = gerar_dados_aleatorios(20)
+        colecao.insert_many(dados_iniciais)
+        print("Dados inseridos com sucesso.")
+    else:
+        print("Coleção já possui dados. Nenhuma inserção inicial foi feita.")
+
+    app.run(debug=True)
