@@ -1,8 +1,7 @@
 # Dashboard Single Page Application (Projeto Data Science)
 
-# Dashboard SPA - Análise de Casos criminais
-
-Este projeto é uma aplicação web do tipo SPA (Single Page Application) desenvolvida com **Flask**, **MongoDB** e **XGBoost**.
+- Dashboard SPA - Análise de Casos criminais
+- Este projeto é uma aplicação web do tipo SPA (Single Page Application) desenvolvida com **Flask**, **MongoDB** e **XGBoost**.
 
 ---
 
