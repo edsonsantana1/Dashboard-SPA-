@@ -1,0 +1,48 @@
+# Ambiente virtual Python
+venv/
+backend/venv/
+env/
+*.env
+
+# Bytecode Python e caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Configurações do editor (VSCode, PyCharm, etc)
+.vscode/
+.idea/
+
+# Arquivos de log
+*.log
+
+# Arquivos temporários do sistema
+.DS_Store
+Thumbs.db
+
+# Dados de banco, se tiver arquivos locais
+*.sqlite3
+
+# Arquivos grandes binários que não devem ir para o Git
+*.dll
+*.exe
+*.so
+*.dylib
+
+# Modelos treinados (caso queira evitar subir modelos pesados)
+*.pkl
+*.joblib
+
+# XGBoost cache/temp files (se algum for gerado)
+xgboost_temp/
+
+# Pasta node_modules, caso use front-end com Node.js
+node_modules/
+
+# Arquivos de distribuição / build
+dist/
+build/
+
+# Arquivos de backup
+*.bak
+*.swp
