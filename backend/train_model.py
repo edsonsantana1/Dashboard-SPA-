@@ -1,14 +1,15 @@
-import pandas as pd
-from pymongo import MongoClient
-from xgboost import XGBClassifier
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
 import pickle
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder, LabelEncoder
+from xgboost import XGBClassifier
+from pymongo import MongoClient
+import pandas as pd
 
 # 1. Conectar no MongoDB e puxar dados
 client = MongoClient(
     "mongodb+srv://datascience2025teste:516ZRabl1fHOyzAC@datascience.jyfalwg.mongodb.net/?retryWrites=true&w=majority&appName=datascience")
+
 db = client["meu_banco"]
 colecao = db["meus_dados"]
 
@@ -25,7 +26,6 @@ for d in dados:
     })
 
 df = pd.DataFrame(lista)
-
 
 # 3. Variáveis explicativas e alvo
 X = df[["idade", "etnia", "localizacao"]]

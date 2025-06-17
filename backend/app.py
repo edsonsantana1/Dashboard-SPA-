@@ -1,12 +1,12 @@
-from flask import Flask, jsonify, request, abort
-from flask_cors import CORS
-from pymongo import MongoClient
-from datetime import datetime, timedelta
-from dataclasses import dataclass, asdict
-import random
-import pickle
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pickle
+import random
+from dataclasses import dataclass, asdict
+from datetime import datetime, timedelta
+from pymongo import MongoClient
+from flask_cors import CORS
+from flask import Flask, jsonify, request, abort
 
 app = Flask(__name__)
 CORS(app)
@@ -17,10 +17,12 @@ client = MongoClient(MONGO_URI)
 db = client["meu_banco"]
 colecao = db["meus_dados"]
 
+
 @dataclass
 class Vitima:
     etnia: str
     idade: int
+
 
 @dataclass
 class Caso:
@@ -37,6 +39,7 @@ class Caso:
             "vitima": asdict(self.vitima)
         }
 
+
 def validar_caso_json(data):
     try:
         vitima = data["vitima"]
@@ -49,6 +52,7 @@ def validar_caso_json(data):
         return False
     return True
 
+
 def gerar_dados_aleatorios(n=20):
     tipos_casos = ["Furto", "Assalto", "Violência doméstica", "Tráfico"]
     locais = ["Centro", "Bairro A", "Bairro B", "Zona Rural"]
@@ -56,7 +60,8 @@ def gerar_dados_aleatorios(n=20):
     casos = []
     base_date = datetime.now()
     for i in range(n):
-        data_caso = (base_date - timedelta(days=random.randint(0, 365))).date().isoformat()
+        data_caso = (
+            base_date - timedelta(days=random.randint(0, 365))).date().isoformat()
         caso = Caso(
             data_do_caso=data_caso,
             tipo_do_caso=random.choice(tipos_casos),
@@ -69,10 +74,12 @@ def gerar_dados_aleatorios(n=20):
         casos.append(caso.to_dict())
     return casos
 
+
 @app.route('/api/casos', methods=['GET'])
 def listar_casos():
     documentos = list(colecao.find({}, {"_id": 0}))
     return jsonify(documentos), 200
+
 
 @app.route('/api/casos', methods=['POST'])
 def criar_caso():
@@ -82,6 +89,7 @@ def criar_caso():
     colecao.insert_one(data)
     return jsonify({"message": "Caso criado com sucesso"}), 201
 
+
 @app.route('/api/casos/<string:data_caso>', methods=['GET'])
 def buscar_caso(data_caso):
     caso = colecao.find_one({"data_do_caso": data_caso}, {"_id": 0})
@@ -89,12 +97,14 @@ def buscar_caso(data_caso):
         abort(404, "Caso não encontrado.")
     return jsonify(caso), 200
 
+
 @app.route('/api/casos/<string:data_caso>', methods=['DELETE'])
 def deletar_caso(data_caso):
     resultado = colecao.delete_one({"data_do_caso": data_caso})
     if resultado.deleted_count == 0:
         abort(404, "Caso não encontrado.")
     return jsonify({"message": "Caso deletado"}), 200
+
 
 @app.route('/api/associacoes', methods=['GET'])
 def associacoes():
@@ -118,6 +128,7 @@ def associacoes():
     except Exception as e:
         return jsonify({"error": f"Erro ao processar modelo: {str(e)}"}), 500
 
+
 # Carrega pipeline + label encoder salvos
 with open("model.pkl", "rb") as f:
     data = pickle.load(f)
@@ -125,6 +136,8 @@ with open("model.pkl", "rb") as f:
     label_encoder = data["label_encoder"]
 
 # Endpoint para predição
+
+
 @app.route('/api/predizer', methods=['POST'])
 def predizer():
     dados = request.get_json()
@@ -145,6 +158,8 @@ def predizer():
         return jsonify({"erro": f"Erro ao fazer predição: {str(e)}"}), 500
 
 # Novo endpoint para pegar coeficientes (feature importances)
+
+
 @app.route('/api/modelo/coeficientes', methods=['GET'])
 def coeficientes_modelo():
     try:
@@ -154,7 +169,8 @@ def coeficientes_modelo():
 
         # Pegando nomes das features após o OneHotEncoding
         cat_encoder = preprocessor.named_transformers_['cat']
-        cat_features = cat_encoder.get_feature_names_out(preprocessor.transformers_[0][2])
+        cat_features = cat_encoder.get_feature_names_out(
+            preprocessor.transformers_[0][2])
         numeric_features = preprocessor.transformers_[1][2]
         all_features = list(cat_features) + list(numeric_features)
 
@@ -172,6 +188,7 @@ def coeficientes_modelo():
     except Exception as e:
         print("ERRO:", str(e))
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     if colecao.count_documents({}) == 0:
